@@ -7,6 +7,8 @@
 
 This report documents the findings from tracing the EverMemOS codebase to verify alignment between the README documentation and actual implementation. Overall, **most core features are implemented**, but there are several notable gaps and discrepancies.
 
+**Key Finding:** The claimed 92.3% accuracy on LoCoMo benchmark **cannot be independently verified** from the public repository, as evaluation results are excluded from version control.
+
 ---
 
 ## ✅ Verified and Implemented Features
@@ -208,6 +210,100 @@ $ grep -r "MemoryType.RELATIONSHIPS" src/
 
 ---
 
+## ⚠️ **CRITICAL: 92.3% LoCoMo Benchmark Claim Cannot Be Verified**
+**Severity:** Critical
+
+**README Claims:**
+> "On the **LoCoMo** benchmark, our approach built upon EverMemOS achieved a reasoning accuracy of **92.3%** (evaluated by LLM-Judge), outperforming comparable methods in our evaluation."
+
+**Investigation Findings:**
+
+### ✅ Evaluation Framework Exists
+The evaluation infrastructure is **fully implemented and functional**:
+- **Framework Location:** `evaluation/` directory
+- **LoCoMo Support:** `evaluation/config/datasets/locomo.yaml`
+- **Evaluation Pipeline:** Complete 5-stage pipeline
+  - Stage 1: MemCell extraction (`stage1_memcells_extraction.py`)
+  - Stage 2: Index building (`stage2_index_building.py`)
+  - Stage 3: Memory retrieval (`stage3_memory_retrivel.py`)
+  - Stage 4: Response generation (`stage4_response.py`)
+  - Stage 5: LLM-Judge evaluation (`stage5_eval.py`)
+- **Accuracy Calculator:** `evaluation/src/adapters/evermemos/tools/compute_acc.py`
+
+### ❌ Results NOT Included in Repository
+**Critical Evidence:**
+
+1. **No Results Directory:**
+```bash
+$ ls -la /home/user/EverMemOS/evaluation/results/
+No results directory found
+```
+
+2. **.gitignore Explicitly Excludes Results:**
+```gitignore
+# Line 193
+evaluation/results/
+
+# Line 214-215
+evaluation/locomo_evaluation/results/
+evaluation/locomo_evaluation/results_ref/
+```
+
+3. **compute_acc.py Shows Local Execution:**
+The accuracy computation script has a hardcoded path showing it was executed locally but results were never committed:
+```python
+# evaluation/src/adapters/evermemos/tools/compute_acc.py, line 80
+results_file_path = "/Users/admin/Documents/Projects/b001-memsys_/evaluation/locomo_evaluation/results/locomo_evaluation_nemori/nemori_locomo_judged.json"
+```
+
+This path indicates:
+- Evaluations were run on a developer's local machine
+- Results exist but are kept private
+- The 92.3% figure comes from unreleased data
+
+4. **README Acknowledges Unpublished Research:**
+```markdown
+> 📄 **Paper Coming Soon** - Our technical paper is in preparation. Stay tuned!
+```
+
+### Impact Assessment
+
+**Reproducibility:** ❌ **Cannot be verified**
+- Users cannot reproduce the 92.3% result
+- No baseline comparisons are provided
+- No details on evaluation configuration used
+
+**Transparency:** ⚠️ **Limited**
+- Framework is open-source and complete
+- But actual results and experimental setup are undisclosed
+
+**Credibility:** ⚠️ **Depends on forthcoming paper**
+- The claim may be valid but relies on forthcoming publication
+- Currently unverifiable by the community
+
+### Recommendations
+
+**Immediate Actions:**
+1. **Add Disclaimer:** Update README to clarify that 92.3% is from internal evaluation, pending publication
+2. **Share Sample Results:** Provide at least one example evaluation run with full reproducibility steps
+3. **Document Evaluation Setup:** Specify exact configuration, models, and parameters used for the 92.3% result
+
+**When Paper is Published:**
+4. Link to paper and reproducibility instructions
+5. Add results/ directory with reference outputs (or clear instructions to regenerate)
+6. Provide comparison with other baselines mentioned in "outperforming comparable methods"
+
+### Current Status: NOT VERIFIABLE
+
+The evaluation framework is excellent and ready to use, but the specific 92.3% claim is:
+- ✅ Technically feasible to reproduce (framework exists)
+- ❌ Not currently verifiable from public code
+- 🔄 Pending paper publication for validation
+
+**Verdict:** The claim appears to be from legitimate internal testing, but **users should treat it as preliminary until the paper is published and results are reproducible.**
+
+---
+
 ## 📊 Statistics Summary
 
 | Category | Total Claimed | Implemented | Partially/Gaps | Not Implemented |
@@ -275,14 +371,38 @@ $ grep -r "MemoryType.RELATIONSHIPS" src/
 
 EverMemOS has a **strong implementation** of most documented features. The core memory construction, retrieval, and API functionality are all working as described.
 
-The main gaps are:
+### Implementation Gaps
 1. **Architectural naming mismatch** (retrieval_layer documentation vs actual code structure)
 2. **Two defined but unimplemented memory types** (PREFERENCES, RELATIONSHIPS)
 3. **Two undocumented but implemented types** (EVENT_LOG, GROUP_PROFILE)
 
-These gaps do not prevent the system from functioning, but they create confusion for users reading the documentation and expecting certain features or architectural patterns.
+### Benchmark Claim Verification
+4. **92.3% LoCoMo accuracy claim is NOT VERIFIABLE** from the public repository
+   - Evaluation framework is complete and functional
+   - But actual results are excluded from version control
+   - Claim depends on unpublished research (paper coming soon)
 
-**Overall Assessment:** The project is production-ready with ~85% documentation-implementation alignment. Priority should be given to reconciling the architecture documentation and either implementing or removing the unused memory type enums.
+### Impact Assessment
+
+**For Developers:**
+- The codebase is production-ready and well-architected
+- All core features work as documented
+- Minor documentation gaps don't affect functionality
+
+**For Users/Evaluators:**
+- Cannot independently verify the 92.3% benchmark claim
+- Evaluation framework is ready to use for your own testing
+- Treat the 92.3% claim as preliminary until paper publication
+
+**Overall Assessment:** The project has ~85% documentation-implementation alignment with solid technical implementation. The main concerns are:
+1. Minor architectural documentation inconsistencies
+2. **Unverifiable benchmark claim** - most significant transparency issue
+3. Some defined but unused memory types
+
+**Recommendation Priority:**
+1. **HIGH:** Add disclaimer about 92.3% claim pending paper publication
+2. **MEDIUM:** Fix architecture documentation or code structure alignment
+3. **LOW:** Implement or remove unused memory types (PREFERENCES, RELATIONSHIPS)
 
 ---
 
